@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
@@ -72,10 +71,20 @@
         .tab-panel {
             transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .tab-panel.hidden-tab {
-            display: none !important;
-            opacity: 0;
-            transform: translateY(6px);
+        /* Fix overlapping tabs on mobile while keeping desktop split view clean */
+        @media (max-width: 767px) {
+            .tab-panel.hidden-tab {
+                display: none !important;
+                opacity: 0;
+                transform: translateY(6px);
+            }
+        }
+        @media (min-width: 768px) {
+            .tab-panel.hidden-tab {
+                display: flex !important;
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         .tab-panel.active-tab {
             display: flex !important;
@@ -140,51 +149,48 @@
 </head>
 <body class="flex flex-col h-full h-dvh w-full bg-black text-white select-none overflow-hidden antialiased">
 
-    <!-- Top Header (Z-Index: 40) -->
-    <header class="h-14 pt-safe border-b border-borderzinc px-4 flex items-center justify-between shrink-0 bg-black/90 backdrop-blur-md z-40 z-layer-base">
+    <!-- Top Header -->
+    <header class="h-14 pt-safe border-b border-borderzinc px-4 flex items-center justify-between shrink-0 bg-black/90 backdrop-blur-md z-40">
         <div class="flex items-center space-x-3">
             <div class="w-7 h-7 bg-white text-black font-extrabold flex items-center justify-center rounded-lg text-sm tracking-tighter shadow-md">
                 X
             </div>
-            <div>
-                <h1 class="fluid-head font-bold tracking-tight text-white flex items-center gap-2">
-                    X.ai Playground
-                    <span id="screen-dim-tag" class="text-[9px] font-mono border border-borderzinc text-zinc-400 px-1.5 py-0.5 rounded-full uppercase">v1.1 MOBILE</span>
-                </h1>
-            </div>
+            <h1 class="fluid-head font-bold tracking-tight text-white flex items-center gap-2">
+                X.ai Playground
+            </h1>
         </div>
 
         <div class="flex items-center space-x-2">
-            <button onclick="clearChat()" class="fluid-txt text-zinc-400 hover:text-white border border-borderzinc hover:border-zinc-500 px-3 py-1.5 rounded-lg transition active:scale-95 flex items-center gap-1.5 font-mono">
+            <button id="btn-reset" class="fluid-txt text-zinc-400 hover:text-white border border-borderzinc hover:border-zinc-500 px-3 py-1.5 rounded-lg transition active:scale-95 flex items-center gap-1.5 font-mono">
                 <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
                 <span class="hidden sm:inline">Reset</span>
             </button>
-            <button onclick="testHumanScore()" class="fluid-txt bg-white text-black font-semibold px-3 py-1.5 rounded-lg hover:bg-zinc-200 transition active:scale-95 flex items-center gap-1.5 font-mono shadow-sm">
+            <button id="btn-check-tone" class="fluid-txt bg-white text-black font-semibold px-3 py-1.5 rounded-lg hover:bg-zinc-200 transition active:scale-95 flex items-center gap-1.5 font-mono shadow-sm">
                 <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
                 <span>Check Tone</span>
             </button>
         </div>
     </header>
 
-    <!-- Main Body Container with Dynamic Axis Scale -->
+    <!-- Main Body Container -->
     <main id="app-viewport" class="flex-1 flex flex-col md:flex-row overflow-hidden relative min-h-0 w-full h-full">
 
         <!-- TAB 1: Chat Stream -->
-        <section id="tab-chat" class="tab-panel active-tab flex-1 flex flex-col h-full w-full bg-black overflow-hidden z-10 z-layer-base border-r border-borderzinc">
+        <section id="tab-chat" class="tab-panel active-tab flex-1 flex flex-col h-full w-full bg-black overflow-hidden z-10 border-r border-borderzinc">
             
             <!-- Quick Voice Presets Bar -->
             <div class="p-2 border-b border-borderzinc bg-darkzinc flex items-center gap-2 overflow-x-auto shrink-0 no-scrollbar scroll-touch">
                 <span class="text-[10px] text-zinc-500 font-mono uppercase tracking-wider shrink-0 pl-2">Preset:</span>
-                <button onclick="applyPersona('casual')" class="fluid-txt border border-borderzinc bg-cardzinc hover:bg-white hover:text-black px-3 py-1.5 rounded-full whitespace-nowrap transition active:scale-95 text-zinc-300 font-mono">
+                <button data-persona="casual" class="btn-preset fluid-txt border border-borderzinc bg-cardzinc hover:bg-white hover:text-black px-3 py-1.5 rounded-full whitespace-nowrap transition active:scale-95 text-zinc-300 font-mono">
                     Casual Friend
                 </button>
-                <button onclick="applyPersona('peer')" class="fluid-txt border border-borderzinc bg-cardzinc hover:bg-white hover:text-black px-3 py-1.5 rounded-full whitespace-nowrap transition active:scale-95 text-zinc-300 font-mono">
+                <button data-persona="peer" class="btn-preset fluid-txt border border-borderzinc bg-cardzinc hover:bg-white hover:text-black px-3 py-1.5 rounded-full whitespace-nowrap transition active:scale-95 text-zinc-300 font-mono">
                     Helpful Peer
                 </button>
-                <button onclick="applyPersona('direct')" class="fluid-txt border border-borderzinc bg-cardzinc hover:bg-white hover:text-black px-3 py-1.5 rounded-full whitespace-nowrap transition active:scale-95 text-zinc-300 font-mono">
+                <button data-persona="direct" class="btn-preset fluid-txt border border-borderzinc bg-cardzinc hover:bg-white hover:text-black px-3 py-1.5 rounded-full whitespace-nowrap transition active:scale-95 text-zinc-300 font-mono">
                     Direct & Concise
                 </button>
-                <button onclick="applyPersona('encouraging')" class="fluid-txt border border-borderzinc bg-cardzinc hover:bg-white hover:text-black px-3 py-1.5 rounded-full whitespace-nowrap transition active:scale-95 text-zinc-300 font-mono">
+                <button data-persona="encouraging" class="btn-preset fluid-txt border border-borderzinc bg-cardzinc hover:bg-white hover:text-black px-3 py-1.5 rounded-full whitespace-nowrap transition active:scale-95 text-zinc-300 font-mono">
                     Encouraging Listener
                 </button>
             </div>
@@ -195,9 +201,9 @@
                     <div class="w-7 h-7 bg-white text-black flex items-center justify-center font-bold text-xs shrink-0 rounded-lg shadow">
                         X
                     </div>
-                    <div class="bg-cardzinc border border-borderzinc p-4 rounded-xl fluid-txt text-zinc-200 space-y-2 z-layer-elevated">
+                    <div class="bg-cardzinc border border-borderzinc p-4 rounded-xl fluid-txt text-zinc-200 space-y-2">
                         <div class="flex items-center justify-between border-b border-borderzinc pb-2">
-                            <span class="text-[10px] text-zinc-400 font-mono uppercase tracking-wider">X.ai Assistant • Initialized</span>
+                            <span class="text-[10px] text-zinc-400 font-mono uppercase tracking-wider">X.AI ASSISTANT • INITIALIZED</span>
                             <span class="text-[9px] text-zinc-500 font-mono">READY</span>
                         </div>
                         <p class="leading-relaxed">I am your conversational AI assistant, tuned for human-like flow with zero robotic phrasing or corporate filler.</p>
@@ -211,7 +217,7 @@
             </div>
 
             <!-- Human Tone Test Banner -->
-            <div id="score-banner" class="hidden border-t border-borderzinc bg-cardzinc p-3.5 text-xs space-y-2 shrink-0 z-20 z-layer-elevated rounded-t-xl">
+            <div id="score-banner" class="hidden border-t border-borderzinc bg-cardzinc p-3.5 text-xs space-y-2 shrink-0 rounded-t-xl">
                 <div class="flex justify-between items-center">
                     <span class="font-mono text-[10px] text-zinc-400 uppercase tracking-widest">Natural Tone Rating</span>
                     <span id="score-percentage" class="font-bold text-xs bg-white text-black px-2.5 py-0.5 rounded-full font-mono">--% Natural</span>
@@ -222,91 +228,69 @@
             </div>
 
             <!-- Input Bar -->
-            <div class="p-3 border-t border-borderzinc bg-black flex items-center gap-2 shrink-0 z-20 pb-20 md:pb-3">
-                <input type="text" id="user-input" onkeydown="if(event.key==='Enter') sendChatMessage()" placeholder="Send a message to test your AI..." class="flex-1 bg-cardzinc border border-borderzinc rounded-xl px-4 py-3 fluid-txt text-white placeholder-zinc-600 focus:outline-none focus:border-white transition font-sans">
-                <button onclick="sendChatMessage()" class="bg-white hover:bg-zinc-200 active:scale-95 text-black p-3 rounded-xl transition font-bold shrink-0 shadow-sm">
+            <div class="p-3 border-t border-borderzinc bg-black flex items-center gap-2 shrink-0 pb-20 md:pb-3">
+                <input type="text" id="user-input" placeholder="Send a message to test your AI..." class="flex-1 bg-cardzinc border border-borderzinc rounded-xl px-4 py-3 fluid-txt text-white placeholder-zinc-600 focus:outline-none focus:border-white transition font-sans">
+                <button id="btn-send" class="bg-white hover:bg-zinc-200 active:scale-95 text-black p-3 rounded-xl transition font-bold shrink-0 shadow-sm">
                     <i data-lucide="arrow-up" class="w-4 h-4"></i>
                 </button>
             </div>
         </section>
 
         <!-- TAB 2: Vibe Controls -->
-        <section id="tab-vibe" class="tab-panel hidden-tab md:flex w-full md:w-80 lg:w-96 border-t md:border-t-0 md:border-l border-borderzinc bg-black h-full overflow-y-auto scroll-touch p-4 space-y-4 shrink-0 z-15 z-layer-elevated">
+        <section id="tab-vibe" class="tab-panel hidden-tab md:flex w-full md:w-80 lg:w-96 border-t md:border-t-0 md:border-l border-borderzinc bg-black h-full overflow-y-auto scroll-touch p-4 space-y-4 shrink-0 pb-28 md:pb-6">
             <div class="border-b border-borderzinc pb-3">
                 <h2 class="fluid-head font-mono uppercase tracking-wider text-white flex items-center gap-2">
                     <i data-lucide="sliders" class="w-4 h-4 text-white"></i> Tune
                 </h2>
             </div>
 
-            <!-- Sliders -->
-            <div class="bg-cardzinc border border-borderzinc p-4 rounded-xl space-y-3 transition hover:border-zinc-400">
+            <div class="bg-cardzinc border border-borderzinc p-4 rounded-xl space-y-3">
                 <div class="flex justify-between fluid-txt font-mono">
                     <span class="text-zinc-300">Warmth</span>
                     <span id="val-warmth" class="text-white font-semibold">Warm</span>
                 </div>
-                <input type="range" id="slide-warmth" min="0" max="100" value="80" oninput="updateSlidersUI()" class="w-full">
-                <div class="flex justify-between text-[10px] text-zinc-500 font-mono">
-                    <span>Direct</span>
-                    <span>Warm</span>
-                </div>
+                <input type="range" id="slide-warmth" min="0" max="100" value="80" class="w-full">
             </div>
 
-            <div class="bg-cardzinc border border-borderzinc p-4 rounded-xl space-y-3 transition hover:border-zinc-400">
+            <div class="bg-cardzinc border border-borderzinc p-4 rounded-xl space-y-3">
                 <div class="flex justify-between fluid-txt font-mono">
                     <span class="text-zinc-300">Plain Talk</span>
                     <span id="val-plaintalk" class="text-white font-semibold">Everyday Words</span>
                 </div>
-                <input type="range" id="slide-plaintalk" min="0" max="100" value="85" oninput="updateSlidersUI()" class="w-full">
-                <div class="flex justify-between text-[10px] text-zinc-500 font-mono">
-                    <span>Technical</span>
-                    <span>Simple</span>
-                </div>
+                <input type="range" id="slide-plaintalk" min="0" max="100" value="85" class="w-full">
             </div>
 
-            <div class="bg-cardzinc border border-borderzinc p-4 rounded-xl space-y-3 transition hover:border-zinc-400">
+            <div class="bg-cardzinc border border-borderzinc p-4 rounded-xl space-y-3">
                 <div class="flex justify-between fluid-txt font-mono">
                     <span class="text-zinc-300">Casualness</span>
                     <span id="val-casual" class="text-white font-semibold">Casual</span>
                 </div>
-                <input type="range" id="slide-casual" min="0" max="100" value="70" oninput="updateSlidersUI()" class="w-full">
-                <div class="flex justify-between text-[10px] text-zinc-500 font-mono">
-                    <span>Formal</span>
-                    <span>Relaxed</span>
-                </div>
+                <input type="range" id="slide-casual" min="0" max="100" value="70" class="w-full">
             </div>
 
-            <div class="bg-cardzinc border border-borderzinc p-4 rounded-xl space-y-3 transition hover:border-zinc-400">
+            <div class="bg-cardzinc border border-borderzinc p-4 rounded-xl space-y-3">
                 <div class="flex justify-between fluid-txt font-mono">
                     <span class="text-zinc-300">Humor & Wit</span>
                     <span id="val-humor" class="text-white font-semibold">Subtle</span>
                 </div>
-                <input type="range" id="slide-humor" min="0" max="100" value="40" oninput="updateSlidersUI()" class="w-full">
-                <div class="flex justify-between text-[10px] text-zinc-500 font-mono">
-                    <span>None</span>
-                    <span>Playful</span>
-                </div>
+                <input type="range" id="slide-humor" min="0" max="100" value="40" class="w-full">
             </div>
-
-            <div class="pb-28 md:pb-6"></div>
         </section>
 
-        <!-- TAB 3: Reworked Streamlined Setup Tab -->
-        <section id="tab-setup" class="tab-panel hidden-tab md:flex w-full md:w-80 lg:w-96 border-t md:border-t-0 md:border-l border-borderzinc bg-black h-full overflow-y-auto scroll-touch p-4 flex-col gap-4 shrink-0 z-15 z-layer-elevated pb-28 md:pb-6">
-            
-            <!-- Selector Header -->
+        <!-- TAB 3: Setup Tab -->
+        <section id="tab-setup" class="tab-panel hidden-tab md:flex w-full md:w-80 lg:w-96 border-t md:border-t-0 md:border-l border-borderzinc bg-black h-full overflow-y-auto scroll-touch p-4 flex-col gap-4 shrink-0 pb-28 md:pb-6">
             <div class="bg-cardzinc border border-borderzinc p-2 rounded-xl flex items-center justify-between gap-1 shrink-0">
-                <button onclick="loadSystemTemplate('human')" class="flex-1 py-2 text-center rounded-lg text-xs font-mono border border-borderzinc bg-black text-white hover:bg-white hover:text-black transition active:scale-95">
+                <button data-template="human" class="btn-template flex-1 py-2 text-center rounded-lg text-xs font-mono border border-borderzinc bg-black text-white hover:bg-white hover:text-black transition active:scale-95">
                     Human
                 </button>
-                <button onclick="loadSystemTemplate('concise')" class="flex-1 py-2 text-center rounded-lg text-xs font-mono border border-borderzinc bg-black text-white hover:bg-white hover:text-black transition active:scale-95">
+                <button data-template="concise" class="btn-template flex-1 py-2 text-center rounded-lg text-xs font-mono border border-borderzinc bg-black text-white hover:bg-white hover:text-black transition active:scale-95">
                     Concise
                 </button>
-                <button onclick="loadSystemTemplate('helpful')" class="flex-1 py-2 text-center rounded-lg text-xs font-mono border border-borderzinc bg-black text-white hover:bg-white hover:text-black transition active:scale-95">
+                <button data-template="helpful" class="btn-template flex-1 py-2 text-center rounded-lg text-xs font-mono border border-borderzinc bg-black text-white hover:bg-white hover:text-black transition active:scale-95">
                     Helpful
                 </button>
             </div>
 
-            <!-- Minimal Rule Toggles -->
             <div class="bg-cardzinc border border-borderzinc p-3 rounded-xl space-y-2 shrink-0">
                 <label class="flex items-center justify-between cursor-pointer p-1.5 hover:bg-zinc-900 rounded-lg transition text-xs font-mono text-zinc-300">
                     <span>No Emojis</span>
@@ -322,34 +306,33 @@
                 </label>
             </div>
 
-            <!-- Pure Setup Prompt Input -->
             <div class="bg-cardzinc border border-borderzinc p-3 rounded-xl flex-1 flex flex-col min-h-[180px] shrink-0">
-                <textarea id="ai-code-input" oninput="updateSystemCharCount()" placeholder="System prompt..." class="w-full flex-1 bg-black border border-borderzinc rounded-lg p-3 fluid-txt font-mono text-zinc-200 placeholder-zinc-700 focus:outline-none focus:border-white transition resize-none"></textarea>
+                <textarea id="ai-code-input" placeholder="System prompt..." class="w-full flex-1 bg-black border border-borderzinc rounded-lg p-3 fluid-txt font-mono text-zinc-200 placeholder-zinc-700 focus:outline-none focus:border-white transition resize-none"></textarea>
             </div>
 
-            <button onclick="applyPastedPrompt()" class="w-full bg-white text-black font-semibold text-xs py-3 rounded-xl hover:bg-zinc-200 active:scale-95 transition flex items-center justify-center gap-2 font-mono shrink-0 shadow-md">
+            <button id="btn-apply-setup" class="w-full bg-white text-black font-semibold text-xs py-3 rounded-xl hover:bg-zinc-200 active:scale-95 transition flex items-center justify-center gap-2 font-mono shrink-0 shadow-md">
                 <i data-lucide="check" class="w-4 h-4"></i> Apply System Setup
             </button>
         </section>
     </main>
 
-    <!-- iOS / Android Bottom Tab Bar -->
-    <nav class="md:hidden h-16 pb-safe border-t border-borderzinc bg-black/90 backdrop-blur-md grid grid-cols-3 shrink-0 z-50 z-layer-active">
-        <button id="nav-chat" onclick="switchMobileTab('chat')" class="flex flex-col items-center justify-center text-white space-y-1 transition active:scale-95">
+    <!-- Bottom Mobile Nav -->
+    <nav class="md:hidden h-16 pb-safe border-t border-borderzinc bg-black/90 backdrop-blur-md grid grid-cols-3 shrink-0 z-50">
+        <button id="nav-chat" class="flex flex-col items-center justify-center text-white space-y-1 transition active:scale-95">
             <i data-lucide="message-square" class="w-4 h-4"></i>
             <span class="text-[10px] font-mono uppercase tracking-wider">Chat</span>
         </button>
-        <button id="nav-vibe" onclick="switchMobileTab('vibe')" class="flex flex-col items-center justify-center text-zinc-500 space-y-1 transition active:scale-95">
+        <button id="nav-vibe" class="flex flex-col items-center justify-center text-zinc-500 space-y-1 transition active:scale-95">
             <i data-lucide="sliders" class="w-4 h-4"></i>
             <span class="text-[10px] font-mono uppercase tracking-wider">Tune</span>
         </button>
-        <button id="nav-setup" onclick="switchMobileTab('setup')" class="flex flex-col items-center justify-center text-zinc-500 space-y-1 transition active:scale-95">
+        <button id="nav-setup" class="flex flex-col items-center justify-center text-zinc-500 space-y-1 transition active:scale-95">
             <i data-lucide="file-text" class="w-4 h-4"></i>
             <span class="text-[10px] font-mono uppercase tracking-wider">Setup</span>
         </button>
     </nav>
 
-    <!-- Script Updates for Tab Switch Animations -->
+    <!-- Script Updates for Event Listeners -->
     <script>
         let defaultInstruction = `You are a human-like, conversational assistant. Speak clearly and naturally in simple everyday language. Avoid robotic clichés, formal disclaimers, or awkward phrases. Keep answers focused, authentic, and direct.`;
         
@@ -357,9 +340,34 @@
         let chatHistory = [];
         let lastAIResponse = "";
 
-        // Dynamic X, Y, Z Autoscale Engine
-        function autoScaleLayout() {
-            const w = window.innerWidth;
-            const h = window.innerHeight;
+        window.onload = function() {
+            lucide.createIcons();
+            document.getElementById('ai-code-input').value = defaultInstruction;
 
-            
+            // Bind Event Listeners cleanly after DOM load
+            document.getElementById('btn-reset').addEventListener('click', clearChat);
+            document.getElementById('btn-check-tone').addEventListener('click', testHumanScore);
+            document.getElementById('btn-send').addEventListener('click', sendChatMessage);
+            document.getElementById('user-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') sendChatMessage();
+            });
+
+            document.getElementById('btn-apply-setup').addEventListener('click', applyPastedPrompt);
+
+            // Tab Navigation listeners
+            document.getElementById('nav-chat').addEventListener('click', () => switchMobileTab('chat'));
+            document.getElementById('nav-vibe').addEventListener('click', () => switchMobileTab('vibe'));
+            document.getElementById('nav-setup').addEventListener('click', () => switchMobileTab('setup'));
+
+            // Slider input listeners
+            ['slide-warmth', 'slide-plaintalk', 'slide-casual', 'slide-humor'].forEach(id => {
+                const slider = document.getElementById(id);
+                if (slider) slider.addEventListener('input', updateSlidersUI);
+            });
+
+            // Preset listeners
+            document.querySelectorAll('.btn-preset').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const persona = e.currentTarget.getAttribute('data-persona');
+                    applyPersona(persona);
+        
