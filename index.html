@@ -1,0 +1,365 @@
+
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>X.ai Playground</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        black: '#000000',
+                        darkzinc: '#09090b',
+                        cardzinc: '#121215',
+                        borderzinc: '#27272a',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --z-scale: 1;
+            --z-elevation-1: 0 2px 8px rgba(255, 255, 255, 0.05);
+            --z-elevation-2: 0 8px 24px rgba(255, 255, 255, 0.1);
+            --z-elevation-3: 0 16px 40px rgba(255, 255, 255, 0.15);
+            --fluid-title: clamp(0.75rem, 2.5vw, 0.95rem);
+            --fluid-text: clamp(0.75rem, 2vw, 0.825rem);
+        }
+
+        html, body {
+            height: 100%;
+            height: -webkit-fill-available;
+            height: 100dvh;
+            width: 100vw;
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
+            perspective: 1000px;
+            overscroll-behavior-y: none;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #000000;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 9999px;
+        }
+
+        .scroll-touch {
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
+        }
+
+        /* Smooth tab transition animations */
+        .tab-panel {
+            transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .tab-panel.hidden-tab {
+            display: none !important;
+            opacity: 0;
+            transform: translateY(6px);
+        }
+        .tab-panel.active-tab {
+            display: flex !important;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Responsive Z-Layering Scale Effects */
+        .z-layer-base {
+            transform: translateZ(calc(0px * var(--z-scale)));
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .z-layer-elevated {
+            transform: translateZ(calc(12px * var(--z-scale)));
+            box-shadow: var(--z-elevation-2);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .z-layer-active {
+            transform: translateZ(calc(24px * var(--z-scale)));
+            box-shadow: var(--z-elevation-3);
+            border-color: #ffffff !important;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            background: #18181b;
+            height: 6px;
+            border-radius: 9999px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 9999px;
+            background: #ffffff;
+            cursor: pointer;
+            border: 1px solid #000000;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            transition: transform 0.15s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:active {
+            transform: scale(1.15);
+        }
+
+        .fluid-txt {
+            font-size: var(--fluid-text);
+        }
+        .fluid-head {
+            font-size: var(--fluid-title);
+        }
+
+        /* Safe area padding for mobile notches & nav bars */
+        .pb-safe {
+            padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+        }
+        .pt-safe {
+            padding-top: max(0.5rem, env(safe-area-inset-top));
+        }
+    </style>
+</head>
+<body class="flex flex-col h-full h-dvh w-full bg-black text-white select-none overflow-hidden antialiased">
+
+    <!-- Top Header (Z-Index: 40) -->
+    <header class="h-14 pt-safe border-b border-borderzinc px-4 flex items-center justify-between shrink-0 bg-black/90 backdrop-blur-md z-40 z-layer-base">
+        <div class="flex items-center space-x-3">
+            <div class="w-7 h-7 bg-white text-black font-extrabold flex items-center justify-center rounded-lg text-sm tracking-tighter shadow-md">
+                X
+            </div>
+            <div>
+                <h1 class="fluid-head font-bold tracking-tight text-white flex items-center gap-2">
+                    X.ai Playground
+                    <span id="screen-dim-tag" class="text-[9px] font-mono border border-borderzinc text-zinc-400 px-1.5 py-0.5 rounded-full uppercase">v1.1 MOBILE</span>
+                </h1>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <button onclick="clearChat()" class="fluid-txt text-zinc-400 hover:text-white border border-borderzinc hover:border-zinc-500 px-3 py-1.5 rounded-lg transition active:scale-95 flex items-center gap-1.5 font-mono">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                <span class="hidden sm:inline">Reset</span>
+            </button>
+            <button onclick="testHumanScore()" class="fluid-txt bg-white text-black font-semibold px-3 py-1.5 rounded-lg hover:bg-zinc-200 transition active:scale-95 flex items-center gap-1.5 font-mono shadow-sm">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                <span>Check Tone</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Body Container with Dynamic Axis Scale -->
+    <main id="app-viewport" class="flex-1 flex flex-col md:flex-row overflow-hidden relative min-h-0 w-full h-full">
+
+        <!-- TAB 1: Chat Stream -->
+        <section id="tab-chat" class="tab-panel active-tab flex-1 flex flex-col h-full w-full bg-black overflow-hidden z-10 z-layer-base border-r border-borderzinc">
+            
+            <!-- Quick Voice Presets Bar -->
+            <div class="p-2 border-b border-borderzinc bg-darkzinc flex items-center gap-2 overflow-x-auto shrink-0 no-scrollbar scroll-touch">
+                <span class="text-[10px] text-zinc-500 font-mono uppercase tracking-wider shrink-0 pl-2">Preset:</span>
+                <button onclick="applyPersona('casual')" class="fluid-txt border border-borderzinc bg-cardzinc hover:bg-white hover:text-black px-3 py-1.5 rounded-full whitespace-nowrap transition active:scale-95 text-zinc-300 font-mono">
+                    Casual Friend
+                </button>
+                <button onclick="applyPersona('peer')" class="fluid-txt border border-borderzinc bg-cardzinc hover:bg-white hover:text-black px-3 py-1.5 rounded-full whitespace-nowrap transition active:scale-95 text-zinc-300 font-mono">
+                    Helpful Peer
+                </button>
+                <button onclick="applyPersona('direct')" class="fluid-txt border border-borderzinc bg-cardzinc hover:bg-white hover:text-black px-3 py-1.5 rounded-full whitespace-nowrap transition active:scale-95 text-zinc-300 font-mono">
+                    Direct & Concise
+                </button>
+                <button onclick="applyPersona('encouraging')" class="fluid-txt border border-borderzinc bg-cardzinc hover:bg-white hover:text-black px-3 py-1.5 rounded-full whitespace-nowrap transition active:scale-95 text-zinc-300 font-mono">
+                    Encouraging Listener
+                </button>
+            </div>
+
+            <!-- Messages Stream -->
+            <div id="messages-container" class="flex-1 p-4 overflow-y-auto scroll-touch space-y-4">
+                <div class="flex items-start space-x-3 max-w-2xl">
+                    <div class="w-7 h-7 bg-white text-black flex items-center justify-center font-bold text-xs shrink-0 rounded-lg shadow">
+                        X
+                    </div>
+                    <div class="bg-cardzinc border border-borderzinc p-4 rounded-xl fluid-txt text-zinc-200 space-y-2 z-layer-elevated">
+                        <div class="flex items-center justify-between border-b border-borderzinc pb-2">
+                            <span class="text-[10px] text-zinc-400 font-mono uppercase tracking-wider">X.ai Assistant • Initialized</span>
+                            <span class="text-[9px] text-zinc-500 font-mono">READY</span>
+                        </div>
+                        <p class="leading-relaxed">I am your conversational AI assistant, tuned for human-like flow with zero robotic phrasing or corporate filler.</p>
+                        <div class="text-[11px] text-zinc-400 pt-1 space-y-1 font-mono">
+                            <p>• Type any message below to test my tone.</p>
+                            <p>• Use <span class="text-white">Tune</span> to adjust warmth, plain talk, and casualness.</p>
+                            <p>• Use <span class="text-white">Setup</span> to load custom rules or instructions.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Human Tone Test Banner -->
+            <div id="score-banner" class="hidden border-t border-borderzinc bg-cardzinc p-3.5 text-xs space-y-2 shrink-0 z-20 z-layer-elevated rounded-t-xl">
+                <div class="flex justify-between items-center">
+                    <span class="font-mono text-[10px] text-zinc-400 uppercase tracking-widest">Natural Tone Rating</span>
+                    <span id="score-percentage" class="font-bold text-xs bg-white text-black px-2.5 py-0.5 rounded-full font-mono">--% Natural</span>
+                </div>
+                <p id="score-advice" class="text-zinc-300 text-[11px] leading-relaxed">
+                    Analyzing response flow...
+                </p>
+            </div>
+
+            <!-- Input Bar -->
+            <div class="p-3 border-t border-borderzinc bg-black flex items-center gap-2 shrink-0 z-20 pb-20 md:pb-3">
+                <input type="text" id="user-input" onkeydown="if(event.key==='Enter') sendChatMessage()" placeholder="Send a message to test your AI..." class="flex-1 bg-cardzinc border border-borderzinc rounded-xl px-4 py-3 fluid-txt text-white placeholder-zinc-600 focus:outline-none focus:border-white transition font-sans">
+                <button onclick="sendChatMessage()" class="bg-white hover:bg-zinc-200 active:scale-95 text-black p-3 rounded-xl transition font-bold shrink-0 shadow-sm">
+                    <i data-lucide="arrow-up" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- TAB 2: Vibe Controls -->
+        <section id="tab-vibe" class="tab-panel hidden-tab md:flex w-full md:w-80 lg:w-96 border-t md:border-t-0 md:border-l border-borderzinc bg-black h-full overflow-y-auto scroll-touch p-4 space-y-4 shrink-0 z-15 z-layer-elevated">
+            <div class="border-b border-borderzinc pb-3">
+                <h2 class="fluid-head font-mono uppercase tracking-wider text-white flex items-center gap-2">
+                    <i data-lucide="sliders" class="w-4 h-4 text-white"></i> Tune
+                </h2>
+            </div>
+
+            <!-- Sliders -->
+            <div class="bg-cardzinc border border-borderzinc p-4 rounded-xl space-y-3 transition hover:border-zinc-400">
+                <div class="flex justify-between fluid-txt font-mono">
+                    <span class="text-zinc-300">Warmth</span>
+                    <span id="val-warmth" class="text-white font-semibold">Warm</span>
+                </div>
+                <input type="range" id="slide-warmth" min="0" max="100" value="80" oninput="updateSlidersUI()" class="w-full">
+                <div class="flex justify-between text-[10px] text-zinc-500 font-mono">
+                    <span>Direct</span>
+                    <span>Warm</span>
+                </div>
+            </div>
+
+            <div class="bg-cardzinc border border-borderzinc p-4 rounded-xl space-y-3 transition hover:border-zinc-400">
+                <div class="flex justify-between fluid-txt font-mono">
+                    <span class="text-zinc-300">Plain Talk</span>
+                    <span id="val-plaintalk" class="text-white font-semibold">Everyday Words</span>
+                </div>
+                <input type="range" id="slide-plaintalk" min="0" max="100" value="85" oninput="updateSlidersUI()" class="w-full">
+                <div class="flex justify-between text-[10px] text-zinc-500 font-mono">
+                    <span>Technical</span>
+                    <span>Simple</span>
+                </div>
+            </div>
+
+            <div class="bg-cardzinc border border-borderzinc p-4 rounded-xl space-y-3 transition hover:border-zinc-400">
+                <div class="flex justify-between fluid-txt font-mono">
+                    <span class="text-zinc-300">Casualness</span>
+                    <span id="val-casual" class="text-white font-semibold">Casual</span>
+                </div>
+                <input type="range" id="slide-casual" min="0" max="100" value="70" oninput="updateSlidersUI()" class="w-full">
+                <div class="flex justify-between text-[10px] text-zinc-500 font-mono">
+                    <span>Formal</span>
+                    <span>Relaxed</span>
+                </div>
+            </div>
+
+            <div class="bg-cardzinc border border-borderzinc p-4 rounded-xl space-y-3 transition hover:border-zinc-400">
+                <div class="flex justify-between fluid-txt font-mono">
+                    <span class="text-zinc-300">Humor & Wit</span>
+                    <span id="val-humor" class="text-white font-semibold">Subtle</span>
+                </div>
+                <input type="range" id="slide-humor" min="0" max="100" value="40" oninput="updateSlidersUI()" class="w-full">
+                <div class="flex justify-between text-[10px] text-zinc-500 font-mono">
+                    <span>None</span>
+                    <span>Playful</span>
+                </div>
+            </div>
+
+            <div class="pb-28 md:pb-6"></div>
+        </section>
+
+        <!-- TAB 3: Reworked Streamlined Setup Tab -->
+        <section id="tab-setup" class="tab-panel hidden-tab md:flex w-full md:w-80 lg:w-96 border-t md:border-t-0 md:border-l border-borderzinc bg-black h-full overflow-y-auto scroll-touch p-4 flex-col gap-4 shrink-0 z-15 z-layer-elevated pb-28 md:pb-6">
+            
+            <!-- Selector Header -->
+            <div class="bg-cardzinc border border-borderzinc p-2 rounded-xl flex items-center justify-between gap-1 shrink-0">
+                <button onclick="loadSystemTemplate('human')" class="flex-1 py-2 text-center rounded-lg text-xs font-mono border border-borderzinc bg-black text-white hover:bg-white hover:text-black transition active:scale-95">
+                    Human
+                </button>
+                <button onclick="loadSystemTemplate('concise')" class="flex-1 py-2 text-center rounded-lg text-xs font-mono border border-borderzinc bg-black text-white hover:bg-white hover:text-black transition active:scale-95">
+                    Concise
+                </button>
+                <button onclick="loadSystemTemplate('helpful')" class="flex-1 py-2 text-center rounded-lg text-xs font-mono border border-borderzinc bg-black text-white hover:bg-white hover:text-black transition active:scale-95">
+                    Helpful
+                </button>
+            </div>
+
+            <!-- Minimal Rule Toggles -->
+            <div class="bg-cardzinc border border-borderzinc p-3 rounded-xl space-y-2 shrink-0">
+                <label class="flex items-center justify-between cursor-pointer p-1.5 hover:bg-zinc-900 rounded-lg transition text-xs font-mono text-zinc-300">
+                    <span>No Emojis</span>
+                    <input type="checkbox" id="rule-no-emoji" checked class="accent-white w-4 h-4 rounded bg-black border-borderzinc">
+                </label>
+                <label class="flex items-center justify-between cursor-pointer p-1.5 hover:bg-zinc-900 rounded-lg transition text-xs font-mono text-zinc-300">
+                    <span>No Corporate Jargon</span>
+                    <input type="checkbox" id="rule-no-jargon" checked class="accent-white w-4 h-4 rounded bg-black border-borderzinc">
+                </label>
+                <label class="flex items-center justify-between cursor-pointer p-1.5 hover:bg-zinc-900 rounded-lg transition text-xs font-mono text-zinc-300">
+                    <span>Plain Everyday Language</span>
+                    <input type="checkbox" id="rule-plain-lang" checked class="accent-white w-4 h-4 rounded bg-black border-borderzinc">
+                </label>
+            </div>
+
+            <!-- Pure Setup Prompt Input -->
+            <div class="bg-cardzinc border border-borderzinc p-3 rounded-xl flex-1 flex flex-col min-h-[180px] shrink-0">
+                <textarea id="ai-code-input" oninput="updateSystemCharCount()" placeholder="System prompt..." class="w-full flex-1 bg-black border border-borderzinc rounded-lg p-3 fluid-txt font-mono text-zinc-200 placeholder-zinc-700 focus:outline-none focus:border-white transition resize-none"></textarea>
+            </div>
+
+            <button onclick="applyPastedPrompt()" class="w-full bg-white text-black font-semibold text-xs py-3 rounded-xl hover:bg-zinc-200 active:scale-95 transition flex items-center justify-center gap-2 font-mono shrink-0 shadow-md">
+                <i data-lucide="check" class="w-4 h-4"></i> Apply System Setup
+            </button>
+        </section>
+    </main>
+
+    <!-- iOS / Android Bottom Tab Bar -->
+    <nav class="md:hidden h-16 pb-safe border-t border-borderzinc bg-black/90 backdrop-blur-md grid grid-cols-3 shrink-0 z-50 z-layer-active">
+        <button id="nav-chat" onclick="switchMobileTab('chat')" class="flex flex-col items-center justify-center text-white space-y-1 transition active:scale-95">
+            <i data-lucide="message-square" class="w-4 h-4"></i>
+            <span class="text-[10px] font-mono uppercase tracking-wider">Chat</span>
+        </button>
+        <button id="nav-vibe" onclick="switchMobileTab('vibe')" class="flex flex-col items-center justify-center text-zinc-500 space-y-1 transition active:scale-95">
+            <i data-lucide="sliders" class="w-4 h-4"></i>
+            <span class="text-[10px] font-mono uppercase tracking-wider">Tune</span>
+        </button>
+        <button id="nav-setup" onclick="switchMobileTab('setup')" class="flex flex-col items-center justify-center text-zinc-500 space-y-1 transition active:scale-95">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
+            <span class="text-[10px] font-mono uppercase tracking-wider">Setup</span>
+        </button>
+    </nav>
+
+    <!-- Script Updates for Tab Switch Animations -->
+    <script>
+        let defaultInstruction = `You are a human-like, conversational assistant. Speak clearly and naturally in simple everyday language. Avoid robotic clichés, formal disclaimers, or awkward phrases. Keep answers focused, authentic, and direct.`;
+        
+        let customPrompt = defaultInstruction;
+        let chatHistory = [];
+        let lastAIResponse = "";
+
+        // Dynamic X, Y, Z Autoscale Engine
+        function autoScaleLayout() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+
+            
